@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Website</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <canvas id="webgl-background"></canvas>
+    <nav id="nav_menu">
+        <a onclick="showSection('about')">about me</a>
+        <a onclick="showSection('projects')">projects</a>
+        <a onclick="showSection('publications')">publications</a>
+    </nav>
+    <div class="content">
+        <div id="home" class="section active">
+            <h1>welcome</h1>
+            <p> try playing with the background! </p>
+            <p> left click to attract, right click to repel </p>
+        </div>
+        <div id="about" class="section">
+            <h1>about me</h1>
+            <p>im finishing up my bachelors degree, now focusing on my thesis on prompt optimization in LLMs</p>
+        </div>
+        <div id="projects" class="section">
+            <h1>projects</h1>
+            <div class="subsection">
+                <h2> GPT </h2>
+                <p> Followed a <a href="https://youtu.be/kCc8FmEb1nY">tutorial</a> by Andrej Karpathy and trained it on my facebook message data.</p>
+            </div>
+
+        </div>
+        <div id="publications" class="section">
+            <h1>publications</h1>
+            <p> not much yet...</p>
+        </div>
+    </div>
+
+    <script src="background.js"></script>
+</body>
+</html>
