@@ -50,12 +50,37 @@ const particleMaterial = new THREE.PointsMaterial({
 });
 scene.add(new THREE.Points(particleGeometry, particleMaterial));
 
-// Follow the site theme: accent color, glowing (additive) on dark, plain on light
+// Use the original glow image; the generated sprite above stays as the fallback if it fails to load.
+const GLOW_URL = 'https://imgs.search.brave.com/DxKw9Lqh2sQPY7QtQpfQzQgtU5ZSLStZ4HEgZOH7o9U/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9mcmVl/cG5naW1nLmNvbS90/aHVtYi9nbG93LzM1/NDM3LTYtZ2xvdy10/cmFuc3BhcmVudC10/aHVtYi5wbmc';
+let glowImageLoaded = false;
+new THREE.TextureLoader().load(GLOW_URL, texture => {
+    particleMaterial.map = texture;
+    glowImageLoaded = true;
+    applyTheme();
+});
+
+// The glow image gets its look (orange rims, yellow cores that merge) from additive blending
+// onto a half-transparent clear color. These are the tint and clear color per theme.
+const GLOW_LOOK = {
+    light: { tint: 0xf03ff0, clear: 0xffffff, clearAlpha: 0.6 },
+    dark: { tint: 0x2a8a3a, clear: 0x111411, clearAlpha: 0.6 },
+};
+
 function applyTheme() {
-    const dark = document.documentElement.dataset.theme === 'dark';
-    particleMaterial.color.set(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
-    particleMaterial.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
-    particleMaterial.opacity = 0.6;
+    const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+    if (glowImageLoaded) {
+        const look = GLOW_LOOK[theme];
+        particleMaterial.color.set(look.tint);
+        particleMaterial.blending = THREE.AdditiveBlending;
+        particleMaterial.opacity = 1;
+        renderer.setClearColor(look.clear, look.clearAlpha);
+    } else {
+        // Fallback sprite: tinted with the accent color, glowing on dark, plain on light
+        particleMaterial.color.set(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+        particleMaterial.blending = theme === 'dark' ? THREE.AdditiveBlending : THREE.NormalBlending;
+        particleMaterial.opacity = 0.6;
+        renderer.setClearColor(0x000000, 0);
+    }
     particleMaterial.needsUpdate = true;
 }
 applyTheme();
