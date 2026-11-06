@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://vojtechklouda.com/sitemap.xml
