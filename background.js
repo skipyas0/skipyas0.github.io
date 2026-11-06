@@ -1,171 +1,162 @@
-
-function showSection(sectionId) {
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => section.classList.remove('active'));
-    document.getElementById(sectionId).classList.add('active');
-}
-showSection("home")
-const navMenu = document.getElementById('nav_menu');
-// Basic setup
+// Bouncing particles. Mouse: hold left button to attract, right click to repel.
+// Touch: hold to attract, double-tap to repel. Only the background reacts, not the nav or the panel.
+const W = () => window.innerWidth;
+const H = () => window.innerHeight;
 
 const scene = new THREE.Scene();
-const camera = new THREE.OrthographicCamera(
-    window.innerWidth / -2,
-    window.innerWidth / 2,
-    window.innerHeight / 2,
-    window.innerHeight / -2,
-    0.1,
-    1000
-);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0xffffff, 0.6); 
-document.body.appendChild(renderer.domElement);
+const camera = new THREE.OrthographicCamera(W() / -2, W() / 2, H() / 2, H() / -2, 0.1, 1000);
+camera.position.z = 1;
+const renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById('webgl-background'),
+    antialias: true,
+    alpha: true,
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W(), H());
+renderer.setClearColor(0x000000, 0);
 
-// Load a texture to create a glowing effect
-const textureLoader = new THREE.TextureLoader();
-//const glowTexture = textureLoader.load('https://imgs.search.brave.com/mo_xJFw-ml97YM8mRgOh7DfwjlSLt353ZUoN5D6-4Zc/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9wbHVz/cG5nLmNvbS9pbWct/cG5nL2dsb3ctcG5n/LWdsb3ctcG5nLXBo/b3RvLTQwMy5wbmc');
-const glowTexture = textureLoader.load('https://imgs.search.brave.com/DxKw9Lqh2sQPY7QtQpfQzQgtU5ZSLStZ4HEgZOH7o9U/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9mcmVl/cG5naW1nLmNvbS90/aHVtYi9nbG93LzM1/NDM3LTYtZ2xvdy10/cmFuc3BhcmVudC10/aHVtYi5wbmc');
+// Soft round sprite, tinted by the material color
+function glowTexture() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.2, 'rgba(255,255,255,0.5)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+}
 
-
-// Particle variables
+// Same density on every screen size, at most 500 particles
+const particleCount = Math.min(500, Math.round(W() * H() / 2600));
 const particles = [];
-const particleCount = 500;  // Number of particles
-const particleGeometry = new THREE.BufferGeometry();
 const positions = new Float32Array(particleCount * 3);
-
-// Helper function to create a new particle in 2D
-function createParticle(x = Math.random() * window.innerWidth - window.innerWidth / 2,
-                        y = Math.random() * window.innerHeight - window.innerHeight / 2) {
-    return {
-        velocity: new THREE.Vector3(Math.random() * 5 - 2.5, Math.random() * 5 - 2.5, 0),
-        position: new THREE.Vector3(x, y, 0)
-    };
-}
-
-// Initialize particles
 for (let i = 0; i < particleCount; i++) {
-    particles.push(createParticle());
-    positions[i * 3] = particles[i].position.x;
-    positions[i * 3 + 1] = particles[i].position.y;
-    positions[i * 3 + 2] = particles[i].position.z;
+    particles.push({
+        position: new THREE.Vector3(Math.random() * W() - W() / 2, Math.random() * H() - H() / 2, 0),
+        velocity: new THREE.Vector3(Math.random() * 5 - 2.5, Math.random() * 5 - 2.5, 0),
+    });
 }
-
+const particleGeometry = new THREE.BufferGeometry();
 particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-// Material to make particles glow like light sources
 const particleMaterial = new THREE.PointsMaterial({
-    color: 0xf03ff0,  //5e60e9
-    size: 75,  // Increase size to make them look like light sources
-    map: glowTexture,  // Use a texture for glowing effect
-    blending: THREE.AdditiveBlending,  // Additive blending to make particles look like they emit light
+    size: 75,
+    map: glowTexture(),
     transparent: true,
-    depthWrite: false
+    depthWrite: false,
 });
+scene.add(new THREE.Points(particleGeometry, particleMaterial));
 
-const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
-scene.add(particleSystem);
+// Follow the site theme: accent color, glowing (additive) on dark, plain on light
+function applyTheme() {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    particleMaterial.color.set(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+    particleMaterial.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+    particleMaterial.opacity = 0.6;
+    particleMaterial.needsUpdate = true;
+}
+applyTheme();
+window.addEventListener('themechange', applyTheme);
 
-camera.position.z = 1; // Z position is 1 since we are working in 2D space
-
-// Mouse and interaction variables
+// Interaction
 let attractMode = false;
 let repelMode = false;
-let mouseX = 0, mouseY = 0;
+let pointerX = 0, pointerY = 0;   // in scene coordinates (origin at screen center)
 
-window.addEventListener('mousemove', (event) => {
-    mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-    mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+const isBackground = target => !target.closest('nav, .content');
+function setPointer(clientX, clientY) {
+    pointerX = clientX - W() / 2;
+    pointerY = H() / 2 - clientY;
+}
+function repelPulse() {
+    repelMode = true;
+    setTimeout(() => { repelMode = false; }, 200);
+}
+
+window.addEventListener('mousemove', e => setPointer(e.clientX, e.clientY));
+window.addEventListener('mousedown', e => {
+    if (e.button === 0 && isBackground(e.target)) attractMode = true;
+});
+window.addEventListener('mouseup', e => {
+    if (e.button === 0) attractMode = false;
+});
+window.addEventListener('contextmenu', e => {
+    if (!isBackground(e.target)) return;
+    e.preventDefault();
+    setPointer(e.clientX, e.clientY);
+    repelPulse();
 });
 
-window.addEventListener('mousedown', (event) => {
-    // Check if the click is outside the navigation menu
-    if (!navMenu.contains(event.target)) {
-        if (event.button === 0) { // Left click for attraction
-            attractMode = true;
-        }
+let lastTap = 0;
+window.addEventListener('touchstart', e => {
+    if (!isBackground(e.target)) return;
+    e.preventDefault();  // no scrolling, zooming or long-press menu on the background
+    const t = e.touches[0];
+    setPointer(t.clientX, t.clientY);
+    if (e.timeStamp - lastTap < 300) {
+        attractMode = false;
+        repelPulse();
+    } else {
+        attractMode = true;
     }
-});
-
-window.addEventListener('mouseup', (event) => {
-    if (!navMenu.contains(event.target)) {
-        if (event.button === 0) { // Left click release
-            attractMode = false;
-        }
-    }
-});
-
-window.addEventListener('contextmenu', (event) => {
-    if (!navMenu.contains(event.target)) {
-        event.preventDefault(); // Prevent context menu on right click
-        repelMode = true;
-        setTimeout(() => { repelMode = false; }, 200); // Apply repulsion briefly
-    }
-});
+    lastTap = e.timeStamp;
+}, { passive: false });
+window.addEventListener('touchmove', e => {
+    if (!attractMode) return;
+    const t = e.touches[0];
+    setPointer(t.clientX, t.clientY);
+}, { passive: true });
+window.addEventListener('touchend', () => { attractMode = false; });
+window.addEventListener('touchcancel', () => { attractMode = false; });
 
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
+    const halfW = W() / 2, halfH = H() / 2;
 
-    // Update particle positions
-    const positions = particleGeometry.attributes.position.array;
     for (let i = 0; i < particles.length; i++) {
-        const particle = particles[i];
+        const { position: p, velocity: v } = particles[i];
+        const dx = pointerX - p.x;
+        const dy = pointerY - p.y;
+        const distSq = dx * dx + dy * dy;
         if (attractMode) {
-            const dx = (mouseX * window.innerWidth / 2) - particle.position.x;
-            const dy = (mouseY * window.innerHeight / 2) - particle.position.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const force = Math.min(10 / (distance*distance + 0.1), 10);
-            //const force = Math.max(Math.min(-0.000005*(distance-200), 0.2), 0.0)
-            particle.velocity.x += dx * force;
-            particle.velocity.y += dy * force;
+            const force = Math.min(10 / (distSq + 0.1), 10);
+            v.x += dx * force;
+            v.y += dy * force;
         }
-
         if (repelMode) {
-            const dx = particle.position.x - (mouseX * window.innerWidth / 2);
-            const dy = particle.position.y - (mouseY * window.innerHeight / 2);
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            //const force = Math.max(Math.min(-0.00001*(distance-500), 0.7), 0.0); // Stronger force for repulsion
-            const force = Math.min(100 / (distance*distance + 0.1), 400);
-            particle.velocity.x += dx * force;
-            particle.velocity.y += dy * force;
+            const force = Math.min(100 / (distSq + 0.1), 400);
+            v.x -= dx * force;
+            v.y -= dy * force;
         }
 
-        // Update positions and apply velocities
-        particle.position.add(particle.velocity);
+        p.add(v);
 
-        // Bound particles within screen edges
-        if (particle.position.x > window.innerWidth / 2 || particle.position.x < -window.innerWidth / 2) {
-            particle.velocity.x *= -1; // Reverse direction when hitting a vertical boundary
-        }
-        if (particle.position.y > window.innerHeight / 2 || particle.position.y < -window.innerHeight / 2) {
-            particle.velocity.y *= -1; // Reverse direction when hitting a horizontal boundary
-        }
+        // Bounce off the screen edges (and stay inside, even after a strong push)
+        if (p.x > halfW) { p.x = halfW; v.x = -Math.abs(v.x); }
+        if (p.x < -halfW) { p.x = -halfW; v.x = Math.abs(v.x); }
+        if (p.y > halfH) { p.y = halfH; v.y = -Math.abs(v.y); }
+        if (p.y < -halfH) { p.y = -halfH; v.y = Math.abs(v.y); }
 
-        // Slow down velocity for a floating effect
-        particle.velocity.multiplyScalar(0.995);
+        v.multiplyScalar(0.995);   // slow down for a floating effect
 
-        // Update the position array
-        positions[i * 3] = particle.position.x;
-        positions[i * 3 + 1] = particle.position.y;
-        positions[i * 3 + 2] = 0; // Z axis remains 0 to keep it 2D
+        positions[i * 3] = p.x;
+        positions[i * 3 + 1] = p.y;
     }
 
     particleGeometry.attributes.position.needsUpdate = true;
-
-    // Clear the canvas with a transparent background to create motion blur
-    renderer.clear();
     renderer.render(scene, camera);
 }
-
 animate();
 
-// Handle window resize
 window.addEventListener('resize', () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.left = window.innerWidth / -2;
-    camera.right = window.innerWidth / 2;
-    camera.top = window.innerHeight / 2;
-    camera.bottom = window.innerHeight / -2;
+    renderer.setSize(W(), H());
+    camera.left = W() / -2;
+    camera.right = W() / 2;
+    camera.top = H() / 2;
+    camera.bottom = H() / -2;
     camera.updateProjectionMatrix();
 });

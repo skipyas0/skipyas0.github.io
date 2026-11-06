@@ -3,51 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimalist Website</title>
+    <title>Vojtěch Klouda</title>
+    <meta name="description" content="Vojtěch Klouda — projects, experiments and publications.">
+    <script>
+        // Set the theme before first paint to avoid a flash of the wrong colors.
+        document.documentElement.dataset.theme = localStorage.getItem('theme') ||
+            (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
     <canvas id="webgl-background"></canvas>
     <nav id="nav_menu">
-        <a onclick="showSection('about')">About me</a>
-        <a onclick="showSection('projects')">Projects</a>
-        <a onclick="showSection('publications')">Publications</a>
+        <a href="#">Home</a>
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐</button>
     </nav>
-    <div class="content">
-        <div id="home" class="section active">
+    <main class="content">
+        <section id="home" class="section">
             <h1>Welcome</h1>
-            <p> Try playing with the background! </p>
-            <p> Use left click to <b>attract</b>, right click to <b>repel</b>!</p>
-        </div>
-        <div id="about" class="section">
+            <p>Try playing with the background!</p>
+            <p class="hint-mouse">Left click to <b>attract</b>, right click to <b>repel</b>.</p>
+            <p class="hint-touch">Hold to <b>attract</b>, double-tap to <b>repel</b>.</p>
+        </section>
+        <section id="about" class="section">
             <h1>About me</h1>
-            <p><b>Hi!</b></p>
-
-            <p>
-            My name is Vojtech, and I am studying the Open Informatics with specialization in AI at CTU FEE in Prague, Czech Republic.
-            I finished my Bachelor's degree in Cybernetics and Robotics in 2025 from the same uni, graduated with an A for my thesis about prompt optimization for LLMs.
-            I now continue to work on this topic in a research internship at the Articial Intelligence Center at CTU under Jan Drchal PhD.
-            </p>
-        </div>
-        <div id="projects" class="section">
+            <div id="cv"></div>
+        </section>
+        <section id="projects" class="section">
             <h1>Projects</h1>
-            <div class="subsection">
-                <h2> GPT </h2>
-                <p> Followed a <a href="https://youtu.be/kCc8FmEb1nY">tutorial</a> by Andrej Karpathy and trained it on my Facebook message data.</p>
-            </div>
+            <div id="tiles" class="tiles"></div>
+        </section>
+        <article id="post" class="section"></article>
+    </main>
 
-        </div>
-        <div id="publications" class="section">
-            <h1>publications</h1>
-            <div class="subsection">
-                <h2> Bachelor's thesis </h2>
-                <p> <a href="https://dspace.cvut.cz/handle/10467/123489">Accessible here</a>. My thesis focused on Prompt Optimization in Large Language Models. I gained experience with agentic AI, API usage, cluster compute, and general optimization techniques such as genetic algorithms.</p>
-                <p>The relevant code is available <a href="https://github.com/skipyas0/prompt_optimizer">here</a>, and includes the prompt optimizer as well as a simple inference framework inspired by DSPy, featuring some inference-time scaling techniques.</p>
-            </div>
-        </div>
-    </div>
-
+    <script src="site.js"></script>
     <script src="background.js"></script>
 </body>
 </html>
