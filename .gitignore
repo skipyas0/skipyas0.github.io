@@ -1,5 +1,7 @@
 .DS_Store
 content.json
+p/
+sitemap.xml
 vault/.obsidian/workspace*.json
 vault/.obsidian/cache
 vault/.trash/

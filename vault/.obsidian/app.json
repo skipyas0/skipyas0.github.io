@@ -1,6 +1,6 @@
 {
   "useMarkdownLinks": true,
-  "newLinkFormat": "absolute",
+  "newLinkFormat": "relative",
   "attachmentFolderPath": "assets",
   "newFileLocation": "folder",
   "newFileFolderPath": "projects"

@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
+    <!-- meta -->
     <title>Vojtěch Klouda</title>
-    <meta name="description" content="Vojtěch Klouda — projects, experiments and publications.">
+    <meta name="description" content="Projects, experiments and publications by Vojtěch Klouda.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Vojtěch Klouda">
+    <meta property="og:description" content="Projects, experiments and publications by Vojtěch Klouda.">
+    <meta property="og:url" content="https://vojtechklouda.com/">
+    <!-- /meta -->
     <script>
         // Set the theme before first paint to avoid a flash of the wrong colors.
         document.documentElement.dataset.theme = localStorage.getItem('theme') ||
@@ -13,6 +20,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
+    <!-- Visitor stats: https://vojtechklouda.goatcounter.com (no cookies, localhost is not counted) -->
+    <script data-goatcounter="https://vojtechklouda.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 <body>
     <canvas id="webgl-background"></canvas>
